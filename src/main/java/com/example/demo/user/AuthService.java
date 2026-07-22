@@ -2,15 +2,24 @@ package com.example.demo.user;
 
 import java.time.Instant;
 
+import javax.security.auth.login.CredentialNotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.user.dto.CreateUserRequest;
+import com.example.demo.user.dto.LoginRequest;
+import com.example.demo.user.dto.LoginResponse;
 import com.example.demo.user.dto.RequestEmailVerificationRequest;
 import com.example.demo.user.dto.RequestResetPasswordRequest;
 import com.example.demo.user.dto.ResetPasswordRequest;
 import com.example.demo.user.dto.VerifyEmailRequest;
+import com.example.demo.user.dto.VerifyEmailResponse;
 import com.example.demo.user.dto.VerifyPasswordResetRequestRequest;
 import com.example.demo.utils.EnvUtils;
 import com.example.demo.utils.TokenUtils;
@@ -30,6 +39,9 @@ public class AuthService {
 
   @Autowired
   private AuthTokenRepository authTokenRepository;
+
+  @Autowired
+  private AuthenticationManager authenticationManager;
 
   private String generateAndSaveToken(String email, AuthTokenType type) {
     var token = TokenUtils.generateNumeric(AuthToken.TOKEN_SIZE);
@@ -73,9 +85,10 @@ public class AuthService {
     logTokenInDev("Email Verification Token", token);
   }
 
-  public String verifyEmail(VerifyEmailRequest dto) throws EntityNotFoundException {
+  public VerifyEmailResponse verifyEmail(VerifyEmailRequest dto) throws EntityNotFoundException {
     consumeToken(dto.token(), AuthTokenType.EMAIL_VERIFICATION);
-    return generateAndSaveToken(dto.email(), AuthTokenType.USER_CREATION);
+    var newToken = generateAndSaveToken(dto.email(), AuthTokenType.USER_CREATION);
+    return new VerifyEmailResponse(newToken);
   }
 
   public void createUser(CreateUserRequest dto) throws EntityNotFoundException {
@@ -113,5 +126,12 @@ public class AuthService {
 
     user.setPassword(passwordHash);
     userRepository.save(user);
+  }
+
+  public LoginResponse login(LoginRequest dto) throws BadCredentialsException {
+    Authentication auth = authenticationManager
+        .authenticate(new UsernamePasswordAuthenticationToken(dto.email(), dto.password()));
+    User user = (User) auth.getPrincipal();
+    return new LoginResponse(user.getId(), user.getEmail(), user.getRole());
   }
 }
