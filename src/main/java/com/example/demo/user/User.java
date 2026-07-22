@@ -1,6 +1,10 @@
 package com.example.demo.user;
 
-import com.example.demo.utils.UuidV7Id;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+
 import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.SoftDeleteType;
 import org.jspecify.annotations.Nullable;
@@ -10,21 +14,21 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.example.demo.utils.UuidV7Id;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-
-import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "users")
 @SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
 public class User implements UserDetails {
+  public static final int NAME_MAX_SIZE = 128;
+  public static final int PASSWORD_MIN_SIZE = 8;
+  public static final int PASSWORD_MAX_SIZE = 32;
+
   @Id
   @UuidV7Id
   private UUID id;
@@ -40,7 +44,7 @@ public class User implements UserDetails {
   @Column(name = "profile_icon_url")
   private @Nullable String profileIconUrl;
 
-  private String role;
+  private String role = "USER";
 
   @CreatedDate
   @Column(name = "created_at")
@@ -49,6 +53,12 @@ public class User implements UserDetails {
   @LastModifiedDate
   @Column(name = "updated_at")
   private Instant updatedAt;
+
+  public User(String name, String email, @Nullable String password) {
+    this.name = name;
+    this.email = email;
+    this.password = password;
+  }
 
   public UUID getId() {
     return id;
