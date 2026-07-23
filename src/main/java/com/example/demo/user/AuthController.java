@@ -1,18 +1,26 @@
 package com.example.demo.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import com.example.demo.user.dto.CreateUserRequest;
 import com.example.demo.user.dto.LoginRequest;
 import com.example.demo.user.dto.LoginResponse;
 import com.example.demo.user.dto.RequestEmailVerificationRequest;
+import com.example.demo.user.dto.RequestResetPasswordRequest;
+import com.example.demo.user.dto.ResetPasswordRequest;
 import com.example.demo.user.dto.VerifyEmailRequest;
 import com.example.demo.user.dto.VerifyEmailResponse;
+import com.example.demo.user.dto.VerifyPasswordResetRequestRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,5 +59,38 @@ public class AuthController {
   public ResponseEntity<?> registerCreateUser(@Valid @RequestBody CreateUserRequest dto) {
     authService.createUser(dto);
     return ResponseEntity.ok("User created successfully");
+  }
+
+  @PostMapping("/request-reset-password")
+  @Operation(summary = "Request password reset", description = "Requests a password reset token to be sent to the user's email. If the email does not exist, the request is silently ignored.")
+  public ResponseEntity<String> requestResetPassword(@Valid @RequestBody RequestResetPasswordRequest dto) {
+    authService.requestResetPassword(dto);
+    return ResponseEntity.ok("If the email exists, a reset token was sent");
+  }
+
+  @PostMapping("/verify-reset-password")
+  @Operation(summary = "Verify password reset token", description = "Consumes a PASSWORD_RESET_REQUEST token and returns a PASSWORD_RESET token to be used to set a new password.")
+  public ResponseEntity<String> verifyResetPassword(@Valid @RequestBody VerifyPasswordResetRequestRequest dto) {
+    var token = authService.verifyPasswordResetToken(dto);
+    return ResponseEntity.ok(token);
+  }
+
+  @PostMapping("/reset-password")
+  @Operation(summary = "Reset password", description = "Consumes a PASSWORD_RESET token and sets a new password for the user.")
+  public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest dto) {
+    authService.resetPassword(dto);
+    return ResponseEntity.ok("Password reset successfully");
+  }
+
+  @ExceptionHandler(BadCredentialsException.class)
+  @ResponseStatus(HttpStatus.UNAUTHORIZED)
+  public String handleBadCredentials(BadCredentialsException ex) {
+    return ex.getMessage();
+  }
+
+  @ExceptionHandler(EntityNotFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public String handleNotFound(EntityNotFoundException ex) {
+    return ex.getMessage();
   }
 }
