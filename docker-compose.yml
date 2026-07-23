@@ -10,6 +10,12 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql
 
+  grafana:
+    image: grafana/otel-lgtm:latest
+    ports:
+      - "3000:3000"
+      - "4318:4318"
+
   app:
     build: .
     ports:
@@ -19,8 +25,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/demo
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://grafana:4318
     depends_on:
       - postgres
+      - grafana
 
 volumes:
   pgdata:
