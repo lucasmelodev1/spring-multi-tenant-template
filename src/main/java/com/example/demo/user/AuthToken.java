@@ -50,6 +50,9 @@ public class AuthToken {
   @Column(name = "created_at")
   private Instant createdAt;
 
+  public AuthToken() {
+  }
+
   public AuthToken(String email, String tokenHash, AuthTokenType type) {
     this.email = email;
     this.tokenHash = tokenHash;
@@ -65,7 +68,7 @@ public class AuthToken {
   }
 
   public boolean isExpired() {
-    return expiresAt.isAfter(Instant.now());
+    return expiresAt.isBefore(Instant.now());
   }
 
   public boolean isVerified() {

@@ -2,6 +2,7 @@ package com.example.demo.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -32,5 +33,19 @@ public class SpringSecurityConfig {
             .requestMatchers("/api/v1/auth/**").permitAll()
             .anyRequest().authenticated())
         .build();
+  }
+
+  @Configuration
+  @Profile("dev")
+  @EnableWebSecurity
+  static class DevSecurityConfig {
+
+    @Bean
+    SecurityFilterChain devSecurityFilterChain(HttpSecurity http) throws Exception {
+      return http
+          .securityMatcher("/v3/api-docs/**", "/swagger-ui/**", "/scalar/**")
+          .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+          .build();
+    }
   }
 }

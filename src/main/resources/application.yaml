@@ -12,3 +12,16 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    path: /v3/api-docs
+scalar:
+  enabled: true
+  path: /scalar

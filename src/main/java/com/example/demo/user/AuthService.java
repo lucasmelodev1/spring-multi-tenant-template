@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.user.dto.CreateUserRequest;
 import com.example.demo.user.dto.LoginRequest;
@@ -27,6 +28,7 @@ import com.example.demo.utils.TokenUtils;
 import jakarta.persistence.EntityNotFoundException;
 
 @Service
+@Transactional
 public class AuthService {
   @Autowired
   private EnvUtils envUtils;
@@ -86,16 +88,16 @@ public class AuthService {
   }
 
   public VerifyEmailResponse verifyEmail(VerifyEmailRequest dto) throws EntityNotFoundException {
-    consumeToken(dto.token(), AuthTokenType.EMAIL_VERIFICATION);
-    var newToken = generateAndSaveToken(dto.email(), AuthTokenType.USER_CREATION);
+    var oldToken = consumeToken(dto.token(), AuthTokenType.EMAIL_VERIFICATION);
+    var newToken = generateAndSaveToken(oldToken.getEmail(), AuthTokenType.USER_CREATION);
     return new VerifyEmailResponse(newToken);
   }
 
   public void createUser(CreateUserRequest dto) throws EntityNotFoundException {
-    consumeToken(dto.token(), AuthTokenType.USER_CREATION);
+    var token = consumeToken(dto.token(), AuthTokenType.USER_CREATION);
 
     var passwordHash = passwordEncoder.encode(dto.password());
-    var user = new User(dto.name(), dto.email(), passwordHash);
+    var user = new User(dto.name(), token.getEmail(), passwordHash);
     userRepository.save(user);
   }
 
@@ -112,8 +114,8 @@ public class AuthService {
   }
 
   public String verifyPasswordResetToken(VerifyPasswordResetRequestRequest dto) throws EntityNotFoundException {
-    consumeToken(dto.token(), AuthTokenType.PASSWORD_RESET_REQUEST);
-    return generateAndSaveToken(dto.email(), AuthTokenType.PASSWORD_RESET);
+    var token = consumeToken(dto.token(), AuthTokenType.PASSWORD_RESET_REQUEST);
+    return generateAndSaveToken(token.getEmail(), AuthTokenType.PASSWORD_RESET);
   }
 
   public void resetPassword(ResetPasswordRequest dto) throws EntityNotFoundException {

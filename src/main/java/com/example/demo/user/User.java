@@ -54,6 +54,9 @@ public class User implements UserDetails {
   @Column(name = "updated_at")
   private Instant updatedAt;
 
+  public User() {
+}
+
   public User(String name, String email, @Nullable String password) {
     this.name = name;
     this.email = email;
