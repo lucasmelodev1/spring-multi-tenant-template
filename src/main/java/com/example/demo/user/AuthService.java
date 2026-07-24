@@ -87,7 +87,6 @@ public class AuthService {
     log.info(label + " sent to email");
   }
 
-  @Observed(name = "auth.request-email-verification")
   public void requestEmailVerification(RequestEmailVerificationRequest dto) {
     var type = AuthTokenType.EMAIL_VERIFICATION;
     authTokenRepository.revokeActiveByEmailAndType(dto.email(), type, Instant.now());
@@ -96,14 +95,12 @@ public class AuthService {
     logTokenInDev("Email Verification Token", token);
   }
 
-  @Observed(name = "auth.verify-email")
   public VerifyEmailResponse verifyEmail(VerifyEmailRequest dto) throws EntityNotFoundException {
     var oldToken = consumeToken(dto.token(), AuthTokenType.EMAIL_VERIFICATION);
     var newToken = generateAndSaveToken(oldToken.getEmail(), AuthTokenType.USER_CREATION);
     return new VerifyEmailResponse(newToken);
   }
 
-  @Observed(name = "auth.create-user")
   public void createUser(CreateUserRequest dto) throws EntityNotFoundException {
     var token = consumeToken(dto.token(), AuthTokenType.USER_CREATION);
 
@@ -141,11 +138,11 @@ public class AuthService {
     userRepository.save(user);
   }
 
-  @Observed(name = "auth.login")
   public LoginResponse login(LoginRequest dto) throws BadCredentialsException {
     Authentication auth = authenticationManager
         .authenticate(new UsernamePasswordAuthenticationToken(dto.email(), dto.password()));
     User user = (User) auth.getPrincipal();
+    log.info("User " + user.getId() + " logged in");
     return new LoginResponse(user.getId(), user.getEmail(), user.getRole());
   }
 }

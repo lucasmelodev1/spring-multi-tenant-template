@@ -35,6 +35,16 @@ management:
     metrics:
       export:
         url: http://grafana:4318/v1/metrics
+logging:
+  structured:
+    format:
+      console: ecs
+    ecs:
+      service:
+        name: ${SPRING_LOG_SERVICE_NAME:Demo}
+        version: ${SPRING_LOG_VERSION:1}
+        environment: ${SPRING_PROFILES_ACTIVE:dev}
+        node-name: ${SPRING_LOG_NODE_NAME:primary}
 ---
 spring:
   config:
