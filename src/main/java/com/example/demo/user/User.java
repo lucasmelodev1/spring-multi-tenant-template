@@ -1,6 +1,5 @@
 package com.example.demo.user;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -8,30 +7,23 @@ import java.util.UUID;
 import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.SoftDeleteType;
 import org.jspecify.annotations.Nullable;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.example.demo.utils.UuidV7Id;
+import com.example.demo.entity.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users")
 @SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
-public class User implements UserDetails {
+public class User extends BaseEntity implements UserDetails {
   public static final int NAME_MAX_SIZE = 128;
   public static final int PASSWORD_MIN_SIZE = 8;
   public static final int PASSWORD_MAX_SIZE = 32;
-
-  @Id
-  @UuidV7Id
-  private UUID id;
 
   @Column(name = "name", nullable = false)
   private String name;
@@ -46,25 +38,13 @@ public class User implements UserDetails {
 
   private String role = "USER";
 
-  @CreatedDate
-  @Column(name = "created_at")
-  private Instant createdAt;
-
-  @LastModifiedDate
-  @Column(name = "updated_at")
-  private Instant updatedAt;
-
   public User() {
-}
+  }
 
   public User(String name, String email, @Nullable String password) {
     this.name = name;
     this.email = email;
     this.password = password;
-  }
-
-  public UUID getId() {
-    return id;
   }
 
   public String getName() {
@@ -105,14 +85,6 @@ public class User implements UserDetails {
 
   public void setProfileIconUrl(String profileIconUrl) {
     this.profileIconUrl = profileIconUrl;
-  }
-
-  public Instant getCreatedAt() {
-    return createdAt;
-  }
-
-  public Instant getUpdatedAt() {
-    return updatedAt;
   }
 
   @Override
