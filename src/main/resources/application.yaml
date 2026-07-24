@@ -13,12 +13,28 @@ spring:
       ddl-auto: validate
     open-in-view: false
 management:
+  tracing:
+    sampling:
+          probability: 1.0
   observations:
     http:
       server:
         requests:
           name:
             pattern: "{httpRequestMethod} {httpRoute}"
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://grafana:4318/v1/traces
+    logging:
+      export:
+        otlp:
+          endpoint: http://grafana:4318/v1/logs
+  otlp:
+    metrics:
+      export:
+        url: http://grafana:4318/v1/metrics
 ---
 spring:
   config:

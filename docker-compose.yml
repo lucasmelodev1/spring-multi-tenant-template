@@ -9,6 +9,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   grafana:
     image: grafana/otel-lgtm:latest
@@ -27,8 +32,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       OTEL_EXPORTER_OTLP_ENDPOINT: http://grafana:4318
     depends_on:
-      - postgres
-      - grafana
+      postgres:
+        condition: service_healthy
+      grafana:
+        condition: service_started
 
 volumes:
   pgdata:

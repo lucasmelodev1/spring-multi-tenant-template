@@ -4,6 +4,8 @@ import java.time.Instant;
 
 import javax.security.auth.login.CredentialNotFoundException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -25,11 +27,14 @@ import com.example.demo.user.dto.VerifyPasswordResetRequestRequest;
 import com.example.demo.utils.EnvUtils;
 import com.example.demo.utils.TokenUtils;
 
+import io.micrometer.observation.annotation.Observed;
 import jakarta.persistence.EntityNotFoundException;
 
 @Service
 @Transactional
 public class AuthService {
+  private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
   @Autowired
   private EnvUtils envUtils;
 
@@ -63,11 +68,13 @@ public class AuthService {
         .orElseThrow(() -> notFoundException);
 
     if (!foundToken.isValid()) {
+      log.warn("Token is invalid");
       throw notFoundException;
     }
 
     foundToken.consume();
     authTokenRepository.save(foundToken);
+    log.info(type.toString() + " token consumed");
 
     return foundToken;
   }
@@ -77,8 +84,10 @@ public class AuthService {
     if (envUtils.isDevEnvironment()) {
       System.out.println(label + ": " + token);
     }
+    log.info(label + " sent to email");
   }
 
+  @Observed(name = "auth.request-email-verification")
   public void requestEmailVerification(RequestEmailVerificationRequest dto) {
     var type = AuthTokenType.EMAIL_VERIFICATION;
     authTokenRepository.revokeActiveByEmailAndType(dto.email(), type, Instant.now());
@@ -87,12 +96,14 @@ public class AuthService {
     logTokenInDev("Email Verification Token", token);
   }
 
+  @Observed(name = "auth.verify-email")
   public VerifyEmailResponse verifyEmail(VerifyEmailRequest dto) throws EntityNotFoundException {
     var oldToken = consumeToken(dto.token(), AuthTokenType.EMAIL_VERIFICATION);
     var newToken = generateAndSaveToken(oldToken.getEmail(), AuthTokenType.USER_CREATION);
     return new VerifyEmailResponse(newToken);
   }
 
+  @Observed(name = "auth.create-user")
   public void createUser(CreateUserRequest dto) throws EntityNotFoundException {
     var token = consumeToken(dto.token(), AuthTokenType.USER_CREATION);
 
@@ -130,6 +141,7 @@ public class AuthService {
     userRepository.save(user);
   }
 
+  @Observed(name = "auth.login")
   public LoginResponse login(LoginRequest dto) throws BadCredentialsException {
     Authentication auth = authenticationManager
         .authenticate(new UsernamePasswordAuthenticationToken(dto.email(), dto.password()));
